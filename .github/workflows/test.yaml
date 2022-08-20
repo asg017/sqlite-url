@@ -1,0 +1,21 @@
+name: "build"
+on:
+  push:
+    tags:
+      - v*
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test-macos:
+    name: Test on MacOS
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build + Test
+        env:
+          ENV: CI
+        run: |
+          mkdir -p dist/
+          make loadable
+          make test-loadable
