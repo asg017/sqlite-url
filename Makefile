@@ -40,8 +40,10 @@ $(TARGET_LOADABLE): sqlite-url.c
 	gcc -Isqlite \
 	$(LOADABLE_CFLAGS) \
 	$(DEFINE_SQLITE_URL) \
-	-Icurl/include -Lcurl/lib/.libs/ -lcurl \
-	$< -o $@
+	-Icurl/include\
+	$< \
+	-Lcurl/lib/.libs/ -lcurl \
+	-o $@
 
 dist/sqlite3-extra.c: sqlite/sqlite3.c core_init.c
 	cat sqlite/sqlite3.c core_init.c > $@
