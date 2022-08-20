@@ -16,7 +16,7 @@ jobs:
           submodules: true
       - name: Install curl
         run: choco install autoconf automake libtool --source cygwin -y --force
-      #  if: matrix.os == 'windows-2022'
+        if: matrix.os == 'windows-2022'
       - name: Install dep
         run: brew install autoconf automake libtool
         if: matrix.os == 'macos-latest'
@@ -29,6 +29,15 @@ jobs:
           autoreconf -fi
           ./configure --without-ssl
           make
+        if: matrix.os != 'windows-2022'
+      - name: Build curl (windows)
+        run: |
+          C:\tools\cygwin\bin\bash.exe -l -c ^"^
+            cd curl ^&^& ^
+            autoreconf -fi ^&^& ^
+            ./configure --without-ssl ^&^& ^
+            make ^"
+        if: matrix.os == 'windows-2022'
       - name: Build + Test
         run: |
           mkdir -p dist/
