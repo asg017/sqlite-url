@@ -1,18 +1,18 @@
-name: "build"
-on:
-  push:
-  pull_request:
-permissions:
-  contents: read
+on: [push]
+name: "test"
 jobs:
-  test-macos:
-    name: Test on MacOS
-    runs-on: macos-latest
+  build:
+    name: Testing on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+          - os: windows-2022
+          - os: macos-latest
     steps:
       - uses: actions/checkout@v2
       - name: Build + Test
-        env:
-          ENV: CI
         run: |
           mkdir -p dist/
           make loadable
