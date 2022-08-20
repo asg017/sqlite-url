@@ -37,10 +37,10 @@ format: $(FORMAT_FILES)
 loadable: $(TARGET_LOADABLE) $(TARGET_LOADABLE_NOFS)
 
 $(TARGET_LOADABLE): sqlite-url.c
-	gcc -Isqlite \
+	gcc -Isqlite -I. \
 	$(LOADABLE_CFLAGS) \
 	$(DEFINE_SQLITE_URL) \
-	-Icurl/include\
+	-Icurl/include \
 	$< \
 	-Lcurl/lib/.libs/ -lcurl \
 	-o $@
