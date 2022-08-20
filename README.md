@@ -1,5 +1,12 @@
 ## TODO
 
+```
+cd curl
+autoreconf -fi
+./configure --without-ssl
+make
+```
+
 - [ ] how statically include CURL
 - [ ] sqlite3 target
 - [ ] wasm target
@@ -34,3 +41,11 @@ select url(
   'fragment', 'path_segment_at'
 );
 ```
+
+apt-get update && apt-get install make libcurl4-openssl-dev gcc
+
+gcc -Isqlite \
+-fPIC -shared \
+-DSQLITE_URL_DATE="\"2022-08-20T05:54:46Z+0000\"" -DSQLITE_URL_VERSION="\"v0.0.0\"" -DSQLITE_URL_SOURCE="\"\"" \
+-I/usr/include/x86_64-linux-gnu/curl/ -L/usr/lib/x86_64-linux-gnu/ -lcurl \
+sqlite-url.c -o dist/url0.so

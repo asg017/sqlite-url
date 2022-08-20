@@ -11,10 +11,13 @@ CONFIG_LINUX=y
 endif
 
 ifdef CONFIG_DARWIN
+#CURL_FLAGS=-I/usr/local/opt/curl/include -L/usr/local/opt/curl/lib -lcurl
+CURL_FLAGS=-Icurl/include/curl -Lcurl/lib/.libs/ -lcurl
 LOADABLE_EXTENSION=dylib
 endif
 
 ifdef CONFIG_LINUX
+CURL_FLAGS=-I/usr/include/x86_64-linux-gnu/curl/ -L/usr/lib/x86_64-linux-gnu/ -llibcurl
 LOADABLE_EXTENSION=so
 endif
 TARGET_LOADABLE=dist/url0.$(LOADABLE_EXTENSION)
@@ -37,7 +40,7 @@ $(TARGET_LOADABLE): sqlite-url.c
 	gcc -Isqlite \
 	$(LOADABLE_CFLAGS) \
 	$(DEFINE_SQLITE_URL) \
-	-I/usr/local/opt/curl/include -L/usr/local/opt/curl/lib -lcurl \
+	-Icurl/include/curl -Lcurl/lib/.libs/ -lcurl \
 	$< -o $@
 
 dist/sqlite3-extra.c: sqlite/sqlite3.c core_init.c

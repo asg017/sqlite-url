@@ -8,16 +8,26 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-          - os: windows-2022
+          #- os: windows-2022
           - os: macos-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Install curl
-        run: choco install curl -y --force
-        if: matrix.os == 'windows-2022'
-      - name: Install curl
-        run: sudo apt-get install curl -y
+      - uses: actions/checkout@v3
+        submodules: true
+      #- name: Install curl
+      #  run: choco install curl -y --force
+      #  if: matrix.os == 'windows-2022'
+      - name: Install dep
+        run: brew install autoconf
+        if: matrix.os == 'macos-latest'
+      - name: Install deps
+        run: sudo apt-get update && sudo apt-get install autoconf -y
         if: matrix.os == 'ubuntu-latest'
+      - name: Build curl
+        run: |
+          cd curl
+          autoreconf -fi
+          ./configure --without-ssl
+          make
       - name: Build + Test
         run: |
           mkdir -p dist/
