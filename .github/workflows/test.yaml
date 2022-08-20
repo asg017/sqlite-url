@@ -36,7 +36,7 @@ jobs:
             cd curl ^&^& ^
             autoreconf -fi ^&^& ^
             ./configure --without-ssl ^&^& ^
-            make ^"
+            make loadable ^"
         if: matrix.os == 'windows-2022'
       - name: Build + Test
         run: |
