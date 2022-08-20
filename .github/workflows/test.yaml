@@ -18,7 +18,7 @@ jobs:
       #  run: choco install curl -y --force
       #  if: matrix.os == 'windows-2022'
       - name: Install dep
-        run: brew install autoconf
+        run: brew install autoconf automake libtool
         if: matrix.os == 'macos-latest'
       - name: Install deps
         run: sudo apt-get update && sudo apt-get install autoconf -y
