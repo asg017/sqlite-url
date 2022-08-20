@@ -7,15 +7,15 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: ubuntu-latest
-          #- os: windows-2022
-          - os: macos-latest
+          #- os: ubuntu-latest
+          - os: windows-2022
+          #- os: macos-latest
     steps:
       - uses: actions/checkout@v3
         with:
           submodules: true
-      #- name: Install curl
-      #  run: choco install curl -y --force
+        #- name: Install curl
+        run: choco install autoconf automake -y --force
       #  if: matrix.os == 'windows-2022'
       - name: Install dep
         run: brew install autoconf automake libtool

@@ -16,7 +16,7 @@ make
   - [ ] release script
 - [ ] README cleanup
 
-- [ ] `url_query_each(querystring)` https://url.spec.whatwg.org/#urlencoded-parsing
+- [ ] `select name, value from url_query_each(querystring)` https://url.spec.whatwg.org/#urlencoded-parsing
 
 ```sql
 select name, value
@@ -32,7 +32,7 @@ in|state:06
 
 - [ ] `url_querystring(name1, value1, [...])`
 
-- [ ] `url(url, name1, name2)`
+- [ ] `url(url, name1, value1, [...])`
 
 ```sql
 select url(
