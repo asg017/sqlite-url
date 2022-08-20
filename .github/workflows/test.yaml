@@ -16,7 +16,7 @@ jobs:
         run: choco install curl -y --force
         if: matrix.os == 'windows-2022'
       - name: Install curl
-        run: apt-get install curl -y
+        run: sudo apt-get install curl -y
         if: matrix.os == 'ubuntu-latest'
       - name: Build + Test
         run: |
