@@ -12,6 +12,9 @@ jobs:
           - os: macos-latest
     steps:
       - uses: actions/checkout@v2
+      - name: Install curl
+        run: choco install curl -y --force
+        if: matrix.os == 'windows-2022'
       - name: Build + Test
         run: |
           mkdir -p dist/

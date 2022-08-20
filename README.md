@@ -22,3 +22,15 @@ for|county:*
 in|state:06
 */
 ```
+
+- [ ] `url_querystring(name1, value1, [...])`
+
+- [ ] `url(url, name1, name2)`
+
+```sql
+select url(
+  "https://github.com",
+  'path', '/asg017/sqlite-path',
+  'fragment', 'path_segment_at'
+);
+```
