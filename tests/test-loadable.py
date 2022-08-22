@@ -1,5 +1,6 @@
 import sqlite3
 import unittest
+from urllib.parse import urlencode
 
 EXT_PATH="./dist/url0"
 
@@ -33,19 +34,21 @@ def spread_args(args):
   return ",".join(['?'] * len(args))
 
 FUNCTIONS = [
+  "url",
   "url_debug",
   "url_escape",
   "url_fragment",
   "url_host",
   "url_path",
   "url_query",
+  "url_querystring",
   "url_scheme",
   "url_unescape",
   "url_valid",
   "url_version",
 ]
 
-MODULES = []
+MODULES = ["url_query_each"]
 
 TEST_URL = 'https://api.github.com/repos/uscensusbureau/citysdk?sort=asc#ayoo'
 
@@ -74,6 +77,12 @@ class TestUrl(unittest.TestCase):
     self.assertTrue(debug[2].startswith("Source: "))
     self.assertTrue(debug[3].startswith("libcurl"))
   
+  def test_url(self):
+    url = lambda *a: db.execute("select url({args})".format(args=spread_args(a)), a).fetchone()[0]
+    self.assertEqual(url("https://sqlite.org"), "https://sqlite.org/")
+    self.assertEqual(url("https://sqlite.org", "path", "footprint.html"), "https://sqlite.org/footprint.html")
+    self.assertEqual(url("https://sqlite.org", "path", "footprint.html"), "https://sqlite.org/footprint.html")
+
   def test_url_valid(self):
     url_valid = lambda arg: db.execute("select url_valid(?)", [arg]).fetchone()[0]
     self.assertEqual(url_valid("https://t.me"), 1)
@@ -105,9 +114,36 @@ class TestUrl(unittest.TestCase):
     url_query = lambda arg: db.execute("select url_query(?)", [arg]).fetchone()[0]
     self.assertEqual(url_query(TEST_URL), "sort=asc")
   
+  def test_url_querystring(self):
+    url_querystring = lambda *a: db.execute("select url_querystring({args})".format(args=spread_args(a)), a).fetchone()[0]
+    self.assertEqual(url_querystring('a', 'b'), "a=b")
+    self.assertEqual(url_querystring('a', 'b', 'x', 'y'), "a=b&x=y")
+    self.assertEqual(url_querystring('foo bar', 'x'), "foo%20bar=x")
+    # TODO should skip?
+    self.assertEqual(url_querystring('', 'x'), "=x")
+    #TODO test this more
+    #self.assertEqual(url_querystring(';,/?:@&=+$', "-_.!~*'()"), "%3B%2C%2F%3F%3A%40%26%3D%2B%24=-_.%21%7E*%27%28%29")
+    
+  def test_url_query_each(self):
+    url_query_each = lambda x: execute_all("select rowid, * from url_query_each(?)", [x])
+    
+    self.assertEqual(url_query_each("a=b"), [
+      {"rowid": 0, "name": "a", "value": "b"},
+    ])
+    self.assertEqual(url_query_each("a=b&c=d"), [
+      {"rowid": 0, "name": "a", "value": "b"},
+      {"rowid": 1, "name": "c", "value": "d"},
+    ])
+    self.assertEqual(url_query_each("name%20space=value+space"), [
+      {"rowid": 0, "name": "name space", "value": "value space"},
+    ])
+    self.assertEqual(url_query_each("name+space=value%20space"), [
+      {"rowid": 0, "name": "name space", "value": "value space"},
+    ])
   def test_url_fragment(self):
     url_fragment = lambda arg: db.execute("select url_fragment(?)", [arg]).fetchone()[0]
     self.assertEqual(url_fragment(TEST_URL), "ayoo")
+    self.assertEqual(url_fragment("https://a.co#a"), "a")
   
 class TestCoverage(unittest.TestCase):                                      
   def test_coverage(self):                                                      
