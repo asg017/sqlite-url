@@ -1,0 +1,77 @@
+name: "release"
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build-macos:
+    name: Build for MacOS
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+      - name: Install deps
+        run: brew install autoconf automake libtool
+      - name: Build curl
+        run: |
+          cd curl
+          autoreconf -fi
+          ./configure  --without-brotli --without-libpsl --without-nghttp2 --without-ngtcp2 --without-zstd --without-libidn2 --without-librtmp --without-zlib --without-ssl
+          make
+      - name: Build + Test
+        run: |
+          mkdir -p dist/
+          make loadable
+          make test-loadable
+      - name: Upload dist as artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: url0-darwin-amd64
+          path: dist
+  build-linux:
+    name: Build for Linux
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+      - name: Install deps
+        run: sudo apt-get update && sudo apt-get install autoconf -y
+      - name: Build curl
+        run: |
+          cd curl
+          autoreconf -fi
+          ./configure  --without-brotli --without-libpsl --without-nghttp2 --without-ngtcp2 --without-zstd --without-libidn2 --without-librtmp --without-zlib --without-ssl
+          make
+      - name: Build + Test
+        run: |
+          mkdir -p dist/
+          make loadable
+          make test-loadable
+      - name: Upload dist as artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: url0-linux-amd64
+          path: dist
+  release:
+    name: "releases"
+    if: ${{ github.event_name == 'release' }}
+    needs: [build-macos, build-linux]
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+      - name: Download workflow artifacts
+        uses: actions/download-artifact@v2
+      - uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const script = require('.github/workflows/release.js')
+            await script({github, context})
