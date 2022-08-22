@@ -3,7 +3,7 @@
 ```
 cd curl
 autoreconf -fi
-./configure --without-ssl
+./configure  --without-brotli --without-libpsl --without-nghttp2 --without-ngtcp2 --without-zstd --without-libidn2 --without-librtmp --without-ssl --without-zlib
 make
 ```
 
