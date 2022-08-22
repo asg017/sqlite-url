@@ -27,7 +27,7 @@ jobs:
         run: |
           cd curl
           autoreconf -fi
-          ./configure --without-ssl ./configure  --without-brotli --without-libpsl --without-nghttp2 --without-ngtcp2 --without-zstd --without-libidn2 --without-librtmp --without-zlib
+          ./configure  --without-brotli --without-libpsl --without-nghttp2 --without-ngtcp2 --without-zstd --without-libidn2 --without-librtmp --without-zlib --without-ssl
           make
         if: matrix.os != 'windows-2022'
       - name: Build curl (windows)
