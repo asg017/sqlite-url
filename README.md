@@ -45,14 +45,14 @@ See [`docs.md`](./docs.md) for a full API reference.
 
 ## Installing
 
-The [Releases page](https://github.com/asg017/sqlite-url/releases) contains pre-built binaries for Linux amd64, MacOS amd64 (no arm), and Windows.
+The [Releases page](https://github.com/asg017/sqlite-url/releases) contains pre-built binaries for Linux amd6 and MacOS amd64 (no arm).
 
 ### As a loadable extension
 
-If you want to use `sqlite-url` as a [Runtime-loadable extension](https://www.sqlite.org/loadext.html), Download the `url0.dylib` (for MacOS), `url0.so` (Linux), or `url0.dll` (Windows) file from a release and load it into your SQLite environment.
+If you want to use `sqlite-url` as a [Runtime-loadable extension](https://www.sqlite.org/loadext.html), Download the `url0.dylib` (for MacOS) or `url0.so` (Linux) file from a release and load it into your SQLite environment.
 
 > **Note:**
-> The `0` in the filename (`url0.dylib`/ `url0.so`/`url0.dll`) denotes the major version of `sqlite-url`. Currently `sqlite-url` is pre v1, so expect breaking changes in future versions.
+> The `0` in the filename (`url0.dylib`/ `url0.so`) denotes the major version of `sqlite-url`. Currently `sqlite-url` is pre v1, so expect breaking changes in future versions.
 
 For example, if you are using the [SQLite CLI](https://www.sqlite.org/cli.html), you can load the library like so:
 
