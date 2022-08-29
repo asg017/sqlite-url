@@ -39,13 +39,18 @@ FUNCTIONS = [
   "url_escape",
   "url_fragment",
   "url_host",
+  "url_options",
+  "url_password",
   "url_path",
+  "url_port",
   "url_query",
   "url_querystring",
   "url_scheme",
   "url_unescape",
+  "url_user",
   "url_valid",
   "url_version",
+  "url_zoneid",
 ]
 
 MODULES = ["url_query_each"]
@@ -140,10 +145,37 @@ class TestUrl(unittest.TestCase):
     self.assertEqual(url_query_each("name+space=value%20space"), [
       {"rowid": 0, "name": "name space", "value": "value space"},
     ])
+  
   def test_url_fragment(self):
     url_fragment = lambda arg: db.execute("select url_fragment(?)", [arg]).fetchone()[0]
     self.assertEqual(url_fragment(TEST_URL), "ayoo")
     self.assertEqual(url_fragment("https://a.co#a"), "a")
+  
+  def test_url_user(self):
+    url_user = lambda arg: db.execute("select url_user(?)", [arg]).fetchone()[0]
+    self.assertEqual(url_user("https://admin:password@google.com"), "admin")
+  
+  def test_url_password(self):
+    url_password = lambda arg: db.execute("select url_password(?)", [arg]).fetchone()[0]
+    self.assertEqual(url_password("https://admin:password@google.com"), "password")
+    # https://github.com/curl/curl/blob/master/tests/libtest/lib1560.c#L475-L482
+    self.assertEqual(url_password("http://user:pass;word@host/file"), "pass;word")
+  
+  def test_url_options(self):
+    url_options = lambda arg: db.execute("select url_options(?)", [arg]).fetchone()[0]
+
+    # https://github.com/curl/curl/blob/master/tests/libtest/lib1560.c#L475-L482
+    self.assertEqual(url_options("imap://user:pass;word@host/file"), "word")
+  
+  def test_url_port(self):
+    url_port = lambda arg: db.execute("select url_port(?)", [arg]).fetchone()[0]
+    self.assertEqual(url_port("https://google.com:8080"), "8080")
+  
+  def test_url_zoneid(self):
+    url_zoneid = lambda arg: db.execute("select url_zoneid(?)", [arg]).fetchone()[0]
+    self.assertEqual(url_zoneid("http://[ffaa::aa%21]/"), "21")
+    self.assertEqual(url_zoneid("http://[ffaa::aa]/"), None)
+    self.assertEqual(url_zoneid("http://yo.com"), None)
   
 class TestCoverage(unittest.TestCase):                                      
   def test_coverage(self):                                                      

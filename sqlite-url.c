@@ -74,7 +74,6 @@ static void resultPart(sqlite3_context *context, sqlite3_value *urlValue,
 
   uc = curl_url_get(h, upart, &part, CURLU_NON_SUPPORT_SCHEME);
   if (uc) {
-    printf("2\n");
     curl_url_cleanup(h);
     sqlite3_result_null(context);
     return;
@@ -248,6 +247,46 @@ static void urlQueryFunc(sqlite3_context *context, int argc,
 static void urlFragmentFunc(sqlite3_context *context, int argc,
                             sqlite3_value **argv) {
   resultPart(context, argv[0], CURLUPART_FRAGMENT);
+}
+
+/** url_user(url)
+ * Returns the user portion of the given URL.
+ */
+static void urlUserFunc(sqlite3_context *context, int argc,
+                        sqlite3_value **argv) {
+  resultPart(context, argv[0], CURLUPART_USER);
+}
+
+/** url_password(url)
+ * Returns the password portion of the given URL.
+ */
+static void urlPasswordFunc(sqlite3_context *context, int argc,
+                            sqlite3_value **argv) {
+  resultPart(context, argv[0], CURLUPART_PASSWORD);
+}
+
+/** url_options(url)
+ * Returns the options portion of the given URL.
+ */
+static void urlOptionsFunc(sqlite3_context *context, int argc,
+                           sqlite3_value **argv) {
+  resultPart(context, argv[0], CURLUPART_OPTIONS);
+}
+
+/** url_port(url)
+ * Returns the port portion of the given URL.
+ */
+static void urlPortFunc(sqlite3_context *context, int argc,
+                        sqlite3_value **argv) {
+  resultPart(context, argv[0], CURLUPART_PORT);
+}
+
+/** url_zoneid(url)
+ * Returns the zoneid portion of the given URL.
+ */
+static void urlZoneidFunc(sqlite3_context *context, int argc,
+                          sqlite3_value **argv) {
+  resultPart(context, argv[0], CURLUPART_ZONEID);
 }
 
 /** url_escape(url)
@@ -749,6 +788,31 @@ __declspec(dllexport)
                                  SQLITE_UTF8 | SQLITE_INNOCUOUS |
                                      SQLITE_DETERMINISTIC,
                                  0, urlFragmentFunc, 0, 0);
+  if (rc == SQLITE_OK)
+    rc = sqlite3_create_function(db, "url_user", 1,
+                                 SQLITE_UTF8 | SQLITE_INNOCUOUS |
+                                     SQLITE_DETERMINISTIC,
+                                 0, urlUserFunc, 0, 0);
+  if (rc == SQLITE_OK)
+    rc = sqlite3_create_function(db, "url_password", 1,
+                                 SQLITE_UTF8 | SQLITE_INNOCUOUS |
+                                     SQLITE_DETERMINISTIC,
+                                 0, urlPasswordFunc, 0, 0);
+  if (rc == SQLITE_OK)
+    rc = sqlite3_create_function(db, "url_options", 1,
+                                 SQLITE_UTF8 | SQLITE_INNOCUOUS |
+                                     SQLITE_DETERMINISTIC,
+                                 0, urlOptionsFunc, 0, 0);
+  if (rc == SQLITE_OK)
+    rc = sqlite3_create_function(db, "url_port", 1,
+                                 SQLITE_UTF8 | SQLITE_INNOCUOUS |
+                                     SQLITE_DETERMINISTIC,
+                                 0, urlPortFunc, 0, 0);
+  if (rc == SQLITE_OK)
+    rc = sqlite3_create_function(db, "url_zoneid", 1,
+                                 SQLITE_UTF8 | SQLITE_INNOCUOUS |
+                                     SQLITE_DETERMINISTIC,
+                                 0, urlZoneidFunc, 0, 0);
   if (rc == SQLITE_OK)
     rc = sqlite3_create_function(db, "url_escape", 1,
                                  SQLITE_UTF8 | SQLITE_INNOCUOUS |

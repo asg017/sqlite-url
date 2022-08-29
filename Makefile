@@ -78,6 +78,9 @@ test-format:
 test-loadable: $(TARGET_LOADABLE)
 	python3 tests/test-loadable.py
 
+test-loadable-watch: $(TARGET_LOADABLE)
+	watchexec -w sqlite-url.c -w $(TARGET_LOADABLE) -w tests/test-loadable.py --clear -- make test-loadable
+
 test-sqlite3: $(TARGET_SQLITE3)
 	python3 tests/test-sqlite3.py
 
