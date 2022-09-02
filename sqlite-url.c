@@ -66,7 +66,6 @@ static void resultPart(sqlite3_context *context, sqlite3_value *urlValue,
       curl_url_set(h, CURLUPART_URL, (const char *)sqlite3_value_text(urlValue),
                    CURLU_NON_SUPPORT_SCHEME);
   if (uc) {
-    printf("%s\n", curl_url_strerror(uc));
     curl_url_cleanup(h);
     sqlite3_result_null(context);
     return;
@@ -113,7 +112,7 @@ static void urlFunc(sqlite3_context *context, int argc, sqlite3_value **argv) {
     uc = curl_url_set(h, CURLUPART_URL, url, CURLU_NON_SUPPORT_SCHEME);
     if (uc) {
       curl_url_cleanup(h);
-      sqlite3_result_error(context, "todo init url", -1);
+      sqlite3_result_error(context, "Error initializating URL in the first argument", -1);
       return;
     }
   }
@@ -157,6 +156,38 @@ static void urlFunc(sqlite3_context *context, int argc, sqlite3_value **argv) {
       if (uc) {
         curl_url_cleanup(h);
         sqlite3_result_error(context, "Invalid 'fragment' value", -1);
+        return;
+      }
+    } else if (sqlite3_stricmp(partName, "user") == 0) {
+      uc = curl_url_set(h, CURLUPART_USER, partValue,
+                        CURLU_NON_SUPPORT_SCHEME);
+      if (uc) {
+        curl_url_cleanup(h);
+        sqlite3_result_error(context, "Invalid 'user' value", -1);
+        return;
+      }
+    } else if (sqlite3_stricmp(partName, "password") == 0) {
+      uc = curl_url_set(h, CURLUPART_PASSWORD, partValue,
+                        CURLU_NON_SUPPORT_SCHEME);
+      if (uc) {
+        curl_url_cleanup(h);
+        sqlite3_result_error(context, "Invalid 'password' value", -1);
+        return;
+      }
+    } else if (sqlite3_stricmp(partName, "options") == 0) {
+      uc = curl_url_set(h, CURLUPART_OPTIONS, partValue,
+                        CURLU_NON_SUPPORT_SCHEME);
+      if (uc) {
+        curl_url_cleanup(h);
+        sqlite3_result_error(context, "Invalid 'options' value", -1);
+        return;
+      }
+    } else if (sqlite3_stricmp(partName, "zoneid") == 0) {
+      uc = curl_url_set(h, CURLUPART_ZONEID, partValue,
+                        CURLU_NON_SUPPORT_SCHEME);
+      if (uc) {
+        curl_url_cleanup(h);
+        sqlite3_result_error(context, "Invalid 'zoneid' value", -1);
         return;
       }
     } else {
@@ -310,7 +341,7 @@ static void urlEscapeFunc(sqlite3_context *context, int argc,
     sqlite3_result_text(context, output, -1, SQLITE_TRANSIENT);
     curl_free(output);
   } else {
-    sqlite3_result_error(context, "TODO", -1);
+    sqlite3_result_error(context, "Error escaping argument", -1);
   }
   curl_easy_cleanup(curl);
 }
@@ -336,7 +367,7 @@ static void urlUnescapeFunc(sqlite3_context *context, int argc,
     sqlite3_result_text(context, output, len, SQLITE_TRANSIENT);
     curl_free(output);
   } else {
-    sqlite3_result_error(context, "TODO", -1);
+    sqlite3_result_error(context, "Error unescaping argument", -1);
   }
   curl_easy_cleanup(curl);
 }
@@ -349,7 +380,7 @@ static void urlUnescapeFunc(sqlite3_context *context, int argc,
 static void urlQuerystringFunc(sqlite3_context *context, int argc,
                                sqlite3_value **argv) {
   sqlite3 *db = sqlite3_context_db_handle(context);
-
+  char * errmsg;
   if (argc < 2) {
     sqlite3_result_error(
         context, "at least 2 arguments are required for url_querystring", -1);
@@ -370,8 +401,12 @@ static void urlQuerystringFunc(sqlite3_context *context, int argc,
     }
     char *nameOut = curl_easy_escape(curl, name, nName);
     if (!nameOut) {
-      sqlite3_result_error(context, "Error escaping name at argument i=TODO",
-                           -1);
+      if((errmsg = sqlite3_mprintf("Error escaping name in argument %d", i))) {
+        sqlite3_result_error(context, errmsg, -1);
+      } else {
+        sqlite3_result_error_nomem(context);
+      }
+      
       curl_easy_cleanup(curl);
       return;
     } else {
@@ -384,8 +419,11 @@ static void urlQuerystringFunc(sqlite3_context *context, int argc,
 
     char *valueOut = curl_easy_escape(curl, value, nValue);
     if (!valueOut) {
-      sqlite3_result_error(context, "Error escaping value at argument i=TODO",
-                           -1);
+      if((errmsg = sqlite3_mprintf("Error escaping value in argument %d", i+1))) {
+        sqlite3_result_error(context, errmsg, -1);
+      } else {
+        sqlite3_result_error_nomem(context);
+      }
       curl_easy_cleanup(curl);
       return;
     } else {
@@ -422,7 +460,6 @@ static void urlQuerystringFunc(sqlite3_context *context, int argc,
 #define URL_QUERY_EACH_COLUMN_RAWSEQUENCE 1
 #define URL_QUERY_EACH_COLUMN_NAME 2
 #define URL_QUERY_EACH_COLUMN_VALUE 3
-// TODO does raw_sequence make sense here?
 
 typedef struct url_query_each_cursor url_query_each_cursor;
 struct url_query_each_cursor {
@@ -483,7 +520,6 @@ static int urlQueryEachConnect(sqlite3 *db, void *pUnused, int argcUnused,
 */
 static int urlQueryEachDisconnect(sqlite3_vtab *pVtab) {
   sqlite3_free(pVtab);
-  // curl_easy_cleanup(curl); TODO
   return SQLITE_OK;
 }
 
@@ -499,6 +535,11 @@ static int urlQueryEachOpen(sqlite3_vtab *pUnused,
     return SQLITE_NOMEM;
   memset(pCur, 0, sizeof(*pCur));
   *ppCursor = &pCur->base;
+  pCur->curl = curl_easy_init();
+  if (!pCur->curl) {
+    return SQLITE_NOMEM;
+  }
+  
   return SQLITE_OK;
 }
 
@@ -506,7 +547,9 @@ static int urlQueryEachOpen(sqlite3_vtab *pUnused,
 ** Destructor for a url_query_each_cursor.
 */
 static int urlQueryEachClose(sqlite3_vtab_cursor *cur) {
+  url_query_each_cursor *pCur = (url_query_each_cursor *)cur;
   sqlite3_free(cur);
+  curl_easy_cleanup(pCur->curl);
   return SQLITE_OK;
 }
 
@@ -516,11 +559,15 @@ static int urlQueryEachClose(sqlite3_vtab_cursor *cur) {
 static int urlQueryEachNext(sqlite3_vtab_cursor *cur) {
   url_query_each_cursor *pCur = (url_query_each_cursor *)cur;
   pCur->iRowid++;
+  while(pCur->querystring[pCur->i] == '&' && pCur->i < pCur->querystringLength) {
+    pCur->i++;
+  }
   if (pCur->i >= pCur->querystringLength) {
     pCur->complete = 1;
     return SQLITE_OK;
   }
   pCur->seqStart = pCur->i;
+
   // find the end of the current sequence, either end-of-querystring
   // or '&'
   while (pCur->i < pCur->querystringLength) {
@@ -536,15 +583,6 @@ static int urlQueryEachNext(sqlite3_vtab_cursor *cur) {
   }
   return SQLITE_OK;
 }
-
-/*
- for (int c = pCur->seqStart; c < pCur->i; c++) {
-
-      if (pCur->querystring[c] == '+') {
-        pCur->querystring[c] = 0x20;
-      }
-    }
-    */
 /*
 ** Return TRUE if the cursor has been moved off of the last
 ** row of output.
@@ -581,49 +619,53 @@ static int urlQueryEachColumn(
     break;
   }
   case URL_QUERY_EACH_COLUMN_NAME: {
+    int nameEnd = pCur->i;
     for (int c = pCur->seqStart; c < pCur->i; c++) {
       if (pCur->querystring[c] == '=') {
-        char *start = pCur->querystring + pCur->seqStart;
-        int len = c - pCur->seqStart;
-        int outLen;
-        char *output = curl_easy_unescape(pCur->curl, start, len, &outLen);
-        if (output) {
-          sqlite3_result_text(ctx, output, outLen, SQLITE_TRANSIENT);
-        } else {
-          sqlite3_result_error_nomem(ctx);
-        }
-        return SQLITE_OK;
+        nameEnd = c;
+        break;
       }
     }
-    sqlite3_result_text(ctx, "ayoo", -1, SQLITE_TRANSIENT);
-    break;
+    char *start = pCur->querystring + pCur->seqStart;
+    int len = nameEnd - pCur->seqStart;
+    int outLen;
+    if (len == 0) {
+      sqlite3_result_text(ctx, start, 0, SQLITE_TRANSIENT);
+      return SQLITE_OK;
+    }
+    char *output = curl_easy_unescape(pCur->curl, start, len, &outLen);
+    if (output) {
+      sqlite3_result_text(ctx, output, outLen, SQLITE_TRANSIENT);
+    } else {
+      sqlite3_result_error_nomem(ctx);
+    }
+    return SQLITE_OK;
   }
   case URL_QUERY_EACH_COLUMN_VALUE: {
+    int valueStart = pCur->i;
     for (int c = pCur->seqStart; c < pCur->i; c++) {
       if (pCur->querystring[c] == '=') {
-        char *start;
-        int len;
-        int outLen;
-        start = pCur->querystring + (c + 1) /*skip '='*/;
-        // printf("i=%d c=%d i-1=%c\n", pCur->i, c, );
-        if (pCur->querystring[pCur->i - 1] == '&') {
-          // skip starting '=' and the ending '&'
-          len = pCur->i - (c + 2);
-        } else {
-          // just skip the starting '=' (happens with some last sequences)
-          len = pCur->i - (c + 1);
-        }
-        char *output = curl_easy_unescape(pCur->curl, start, len, &outLen);
-        if (output) {
-          sqlite3_result_text(ctx, output, outLen, SQLITE_TRANSIENT);
-        } else {
-          sqlite3_result_error_nomem(ctx);
-        }
-        return SQLITE_OK;
+        // "+1" to skip the '='
+        valueStart = c + 1;
+        break;
       }
     }
-    sqlite3_result_text(ctx, "ayoo", -1, SQLITE_TRANSIENT);
-    break;
+    char *start;
+    int len;
+    int outLen;
+    if (pCur->querystring[pCur->i - 1] == '&') {
+      // skip starting '=' and the ending '&'
+      len = pCur->i - valueStart - 1;
+    } else {
+      len = pCur->i - valueStart;
+    }
+    char *output = curl_easy_unescape(pCur->curl, pCur->querystring + valueStart, len, &outLen);
+    if (output) {
+      sqlite3_result_text(ctx, output, outLen, SQLITE_TRANSIENT);
+    } else {
+      sqlite3_result_error_nomem(ctx);
+    }
+    return SQLITE_OK;
   }
   }
   return SQLITE_OK;
@@ -688,10 +730,9 @@ static int urlQueryEachFilter(sqlite3_vtab_cursor *pVtabCursor, int idxNum,
                               const char *idxStr, int argc,
                               sqlite3_value **argv) {
   url_query_each_cursor *pCur = (url_query_each_cursor *)pVtabCursor;
-  // TODO need to free this somewhere
-  pCur->curl = curl_easy_init();
-  if (!pCur->curl) {
-    return SQLITE_NOMEM;
+  if(sqlite3_value_type(argv[0]) == SQLITE_NULL) {
+    pCur->complete = 1;
+    return SQLITE_OK;  
   }
   pCur->querystring = (char *)sqlite3_value_text(argv[0]);
   pCur->querystringLength = sqlite3_value_bytes(argv[0]);

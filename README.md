@@ -96,7 +96,7 @@ datasette data.db --load-extension ./url0
 
 ## See also
 
-- [sqlite-oath](https://github.com/asg017/sqlite-path), parsing/generating paths (pairs well with `url_path()` and `url()`)
+- [sqlite-path](https://github.com/asg017/sqlite-path), parsing/generating paths (pairs well with `url_path()` and `url()`)
 - [sqlite-http](https://github.com/asg017/sqlite-http), for making HTTP requests in SQLite
 - [sqlite-html](https://github.com/asg017/sqlite-html), for parsing HTML documents
 - [sqlite-lines](https://github.com/asg017/sqlite-lines), for reading large files line-by-line

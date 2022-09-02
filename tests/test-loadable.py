@@ -124,8 +124,9 @@ class TestUrl(unittest.TestCase):
     self.assertEqual(url_querystring('a', 'b'), "a=b")
     self.assertEqual(url_querystring('a', 'b', 'x', 'y'), "a=b&x=y")
     self.assertEqual(url_querystring('foo bar', 'x'), "foo%20bar=x")
-    # TODO should skip?
     self.assertEqual(url_querystring('', 'x'), "=x")
+    self.assertEqual(url_querystring('', ''), "=")
+    self.assertEqual(url_querystring('a', ''), "a=")
     #TODO test this more
     #self.assertEqual(url_querystring(';,/?:@&=+$', "-_.!~*'()"), "%3B%2C%2F%3F%3A%40%26%3D%2B%24=-_.%21%7E*%27%28%29")
     
@@ -133,6 +134,9 @@ class TestUrl(unittest.TestCase):
     url_query_each = lambda x: execute_all("select rowid, * from url_query_each(?)", [x])
     
     self.assertEqual(url_query_each("a=b"), [
+      {"rowid": 0, "name": "a", "value": "b"},
+    ])
+    self.assertEqual(url_query_each("a=b&"), [
       {"rowid": 0, "name": "a", "value": "b"},
     ])
     self.assertEqual(url_query_each("a=b&c=d"), [
@@ -145,6 +149,35 @@ class TestUrl(unittest.TestCase):
     self.assertEqual(url_query_each("name+space=value%20space"), [
       {"rowid": 0, "name": "name space", "value": "value space"},
     ])
+    self.assertEqual(url_query_each("a="), [
+      {"rowid": 0, "name": "a", "value": ""},
+    ])
+    self.assertEqual(url_query_each("a"), [
+      {"rowid": 0, "name": "a", "value": ""},
+    ])
+    self.assertEqual(url_query_each("="), [
+      {"rowid": 0, "name": "", "value": ""},
+    ])
+    self.assertEqual(url_query_each("=b"), [
+      {"rowid": 0, "name": "", "value": "b"},
+    ])
+    self.assertEqual(url_query_each("a=b&&"), [
+      {"rowid": 0, "name": "a", "value": "b"},
+    ])
+    self.assertEqual(url_query_each("a=b&&="), [
+      {"rowid": 0, "name": "a", "value": "b"},
+      {"rowid": 1, "name": "", "value": ""},
+    ])
+    self.assertEqual(url_query_each("a=b&&&&"), [
+      {"rowid": 0, "name": "a", "value": "b"},
+    ])
+    self.assertEqual(url_query_each("==="), [
+      {"rowid": 0, "name": "", "value": "=="},
+    ])
+    self.assertEqual(url_query_each(""), [])
+    self.assertEqual(url_query_each("&"), [])
+    self.assertEqual(url_query_each("&&"), [])
+    self.assertEqual(url_query_each(None), [])
   
   def test_url_fragment(self):
     url_fragment = lambda arg: db.execute("select url_fragment(?)", [arg]).fetchone()[0]
@@ -158,6 +191,7 @@ class TestUrl(unittest.TestCase):
   def test_url_password(self):
     url_password = lambda arg: db.execute("select url_password(?)", [arg]).fetchone()[0]
     self.assertEqual(url_password("https://admin:password@google.com"), "password")
+    
     # https://github.com/curl/curl/blob/master/tests/libtest/lib1560.c#L475-L482
     self.assertEqual(url_password("http://user:pass;word@host/file"), "pass;word")
   
