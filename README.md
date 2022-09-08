@@ -6,11 +6,21 @@ A SQLite extension for parsing and generating URLs and query strings. Based on l
 
 ```sql
 .load ./url0
+select url_valid('https://sqlite.org'); -- 1
+```
+
+Extract specific parts from a given URL.
+
+```sql
 select url_scheme('https://www.sqlite.org/vtab.html#usage'); -- 'https'
 select url_host('https://www.sqlite.org/vtab.html#usage'); -- 'www.sqlite.org'
 select url_path('https://www.sqlite.org/vtab.html#usage'); -- '/vtab.html'
 select url_fragment('https://www.sqlite.org/vtab.html#usage'); -- 'usage'
+```
 
+Generate a URL programmatically.
+
+```sql
 select url(null,
   'scheme', 'https',
   'host', 'alexgarcia.xyz',
@@ -22,21 +32,61 @@ Iterate through all parameters in a URL's query string.
 
 ```sql
 
-*/
-```
-
-Use with sqlite-http to
-
-```sql
-select
-
+select *
+from url_query_each(
+  url_query('https://api.census.gov/data/2020/acs/acs5?get=B01001_001E&for=county:*&in=state:06')
+);
 /*
+┌──────┬─────────────┐
+│ name │    value    │
+├──────┼─────────────┤
+│ get  │ B01001_001E │
+│ for  │ county:*    │
+│ in   │ state:06    │
+└──────┴─────────────┘
 */
 ```
 
+Use with [sqlite-http](https://github.com/asg017/sqlite-http) to generate URLs to request.
+
+```sql
+select http_get_body(
+  url(
+    'https://api.census.gov',
+    'path', '/data/2020/acs/acs5',
+    'query', url_querystring(
+      'get', 'B01001_001E',
+      'for', 'county:*',
+      'in', 'state:06'
+    )
+  )
+);
+/*
+┌────────────────────────────────────┐
+│           http_get_body(           │
+├────────────────────────────────────┤
+│ [["B01001_001E","state","county"], │
+│ ["1661584","06","001"],            │
+│ ["1159","06","003"],               │
+│ ["223344","06","007"],             │
+│ ["21491","06","011"],              │
+│ ["1147788","06","013"],            │
+│ ["190345","06","017"],             │
+│               ...                  │
+│ ["845599","06","111"]]             │
+└────────────────────────────────────┘
+*/
+```
+
+Use with [sqlite-path](https://github.com/asg017/sqlite-path) to safely generate paths for a URL.
+
 ```sql
 
-select
+select url(
+  'https://github.com',
+  'path', path_join('/', 'asg017', 'sqlite-url', 'issues', '1')
+);
+-- 'https://github.com/asg017/sqlite-url/issues/1'
 ```
 
 ## Documentation
