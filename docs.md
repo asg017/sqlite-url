@@ -26,14 +26,33 @@ Get debug info of the sqlite-url library.
 
 Generate a URL. The first "url" parameter is a base URL that is parsed, and can be overwritten by the other parameters. If "url" is null or the empty string, Then only the other parameters are used. "name" parameters must be one of the following:
 
-- "scheme":
-- "host":
-- "path":
-- "query":
-- "fragment":
+- "scheme"
+- "host"
+- "path"
+- "query"
+- "fragment"
+- "user"
+- "password"
+- "options"
+- "zoneid"
 
 ```sql
 
+select url(
+  'http://github.com',
+  'path', 'asg017/sqlite-url',
+  'fragment', 'usage'
+);
+-- 'http://github.com/asg017/sqlite-url#usage'
+
+
+select url(
+  '',
+  'scheme', 'https',
+  'host', 'github.com',
+  'path', 'asg017/sqlite-url'
+);
+-- 'https://github.com/asg017/sqlite-url'
 ```
 
 <h3 name="url_valid"><code>url_valid(url, [strict])</code></h3>
@@ -72,7 +91,9 @@ select url_path('https://github.com/asg017/sqlite-url'); -- '/asg017/sqlite-url'
 
 <h3 name="url_query"><code>url_query(url)</code></h3>
 
-Returns the query portion of the given URL. Use with [`url_query_each`](#url_query_each) to iterate through all escaped items in the resulting query string.
+Returns the query portion of the given URL.
+
+Use with [`url_query_each`](#url_query_each) to iterate through all escaped items in the resulting query string.
 
 ```sql
 select url_query('https://google.com/books?sort=asc'); -- 'sort=asc'
@@ -122,7 +143,9 @@ select url_port('https://google.com:8080'); -- '8080'
 
 <h3 name="url_zoneid"><code>url_zoneid(url)</code></h3>
 
-Returns the zoneid portion of the given URL. Note that it only seems useful with a small susbset of IPv6 URLs.
+Returns the zoneid portion of the given URL.
+
+Note that it only seems useful with a small susbset of IPv6 URLs.
 
 ```sql
 select url_zoneid('http://[ffaa::aa%21]/'); -- '21'
@@ -146,10 +169,9 @@ select url_unescape('alex%20garcia%2C%20%26%3D'); -- 'alex garcia, &='
 
 <h3 name="url_querystring"><code>url_querystring(name1, value1, [...])</code></h3>
 
-Generate a query string with the given names and values.
+Generate a query string with the given names and values, based on the [urlencoded serializing](https://url.spec.whatwg.org/#urlencoded-serializing) algorithm. Individual part are automatically escaped.
 
-Individual segments are automatically escaped.
-https://url.spec.whatwg.org/#urlencoded-serializing
+Use with [`url()`](#url)'s `query` option to generate URLs with query strings.
 
 ```sql
 select url_querystring(
@@ -164,6 +186,12 @@ select url_querystring(
   'after', '2022-08-22T16:14:29.077Z'
 );
 -- 'q=memes&filters=%5B%7B%22type%22%3A%22videos%22%7D%5D&after=2022-08-22T16%3A14%3A29.077Z'
+
+select url(
+  'https://github.com/asg017/sqlite-url/issues',
+  'query', url_querystring('q', 'foo bar')
+);
+-- 'https://github.com/asg017/sqlite-url/issues?q=foo%20bar'
 ```
 
 <h3 name="url_query_each"><code>select * from url_query_each(query)</code></h3>
@@ -171,7 +199,7 @@ select url_querystring(
 Table function that returns each sequence in the given
 query string. Every sequence in the query string returns
 its own row, and every name and value are pre-escaped.
-https://url.spec.whatwg.org/#urlencoded-parsing
+Based on the [urlencoded parsing](https://url.spec.whatwg.org/#urlencoded-parsing) algorithm.
 
 ```sql
 
