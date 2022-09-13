@@ -2,6 +2,8 @@
 
 A SQLite extension for parsing and generating URLs and query strings. Based on libcurl's [URL API](https://curl.se/libcurl/c/libcurl-url.html)
 
+Try it out in your browser and learn more in [Introducing sqlite-url: A SQLite extension for parsing and generating URLs](https://observablehq.com/@asg017/introducing-sqlite-url) (September 2022)
+
 ## Usage
 
 ```sql
