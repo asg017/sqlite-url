@@ -6,34 +6,8 @@ on:
 permissions:
   contents: read
 jobs:
-  build-macos:
-    name: Build for MacOS
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: true
-      - name: Install deps
-        run: brew install autoconf automake libtool
-      - name: Build curl
-        run: |
-          cd curl
-          autoreconf -fi
-          ./configure  --without-brotli --without-libpsl --without-nghttp2 --without-ngtcp2 --without-zstd --without-libidn2 --without-librtmp --without-zlib --without-ssl
-          make
-      - name: Build + Test
-        run: |
-          mkdir -p dist/
-          make loadable
-          make test-loadable
-      - name: Upload dist as artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: url0-darwin-amd64
-          path: dist
-  build-linux:
-    name: Build for Linux
-    runs-on: ubuntu-latest
+  build-linux_x86-extension:
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
         with:
@@ -47,31 +21,139 @@ jobs:
           ./configure  --without-brotli --without-libpsl --without-nghttp2 --without-ngtcp2 --without-zstd --without-libidn2 --without-librtmp --without-zlib --without-ssl
           make
       - name: Build + Test
-        run: |
-          mkdir -p dist/
-          make loadable
-          make test-loadable
-      - name: Upload dist as artifact
-        uses: actions/upload-artifact@v2
+        run: make loadable
+      - uses: actions/upload-artifact@v3
         with:
-          name: url0-linux-amd64
-          path: dist
-  release:
-    name: "releases"
-    if: ${{ github.event_name == 'release' }}
-    needs: [build-macos, build-linux]
+          name: sqlite-url-linux_x86
+          path: dist/url0.so
+  build-linux_x86-python:
+    runs-on: ubuntu-20.04
+    needs: [build-linux_x86-extension]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Download workflow artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: sqlite-url-linux_x86
+          path: dist/
+      - uses: actions/setup-python@v3
+      - run: pip install wheel
+      - run: make python
+      - run: make datasette
+      - uses: actions/upload-artifact@v3
+        with:
+          name: sqlite-url-linux_x86-wheels
+          path: dist/wheels/*.whl
+  build-macos-extension:
+    name: Testing on MacOS
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+      - name: Install deps
+        run: brew install autoconf automake libtool
+      - name: Build curl
+        run: |
+          cd curl
+          autoreconf -fi
+          ./configure  --without-brotli --without-libpsl --without-nghttp2 --without-ngtcp2 --without-zstd --without-libidn2 --without-librtmp --without-zlib --without-ssl
+          make
+      - run: make loadable
+  build-macos-python:
+    runs-on: macos-latest
+    needs: [build-macos-extension]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Download workflow artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: sqlite-url-macos
+          path: dist/
+      - uses: actions/setup-python@v3
+      - run: pip install wheel
+      - run: make python
+      - run: make datasette
+      - uses: actions/upload-artifact@v3
+        with:
+          name: sqlite-url-macos-wheels
+          path: dist/wheels/*.whl
+  upload-extensions:
+    name: Upload release assets
+    needs: [build-macos-extension, build-linux_x86-extension]
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Download workflow artifacts
+        uses: actions/download-artifact@v2
+      - run: npm install tar-fs
+      - uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const script = require('.github/workflows/upload.js')
+            await script({github, context})
+  upload-deno:
+    name: Upload Deno release assets
+    needs: [build-macos-extension, build-linux_x86-extension]
     permissions:
       contents: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-        with:
-          submodules: true
       - name: Download workflow artifacts
         uses: actions/download-artifact@v2
       - uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const script = require('.github/workflows/release.js')
+            const script = require('.github/workflows/upload-deno-assets.js')
             await script({github, context})
+  upload-npm:
+    needs: [build-macos-extension, build-linux_x86-extension]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Download workflow artifacts
+        uses: actions/download-artifact@v2
+      - run: |
+          cp sqlite-url-linux_x86/url0.so npm/sqlite-url-linux-x64/lib/url0.so
+          cp sqlite-url-macos/url0.dylib npm/sqlite-url-darwin-x64/lib/url0.dylib
+      - name: Install node
+        uses: actions/setup-node@v3
+        with:
+          node-version: "16"
+          registry-url: "https://registry.npmjs.org"
+      - name: Publish NPM sqlite-url-linux-x64
+        working-directory: npm/sqlite-url-linux-x64
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish NPM sqlite-url-darwin-x64
+        working-directory: npm/sqlite-url-darwin-x64
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish NPM sqlite-url
+        working-directory: npm/sqlite-url
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+  upload_pypi:
+    needs: [build-linux_x86-python, build-macos-python]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: sqlite-url-linux_x86-wheels
+          path: dist
+      - uses: actions/download-artifact@v3
+        with:
+          name: sqlite-url-macos-wheels
+          path: dist
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          skip_existing: true

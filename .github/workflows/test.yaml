@@ -1,7 +1,84 @@
 on: [push]
 name: "test"
 jobs:
-  test-macos:
+  build-linux_x86-extension:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+      - name: Install deps
+        run: sudo apt-get update && sudo apt-get install autoconf -y
+      - name: Build curl
+        run: |
+          cd curl
+          autoreconf -fi
+          ./configure  --without-brotli --without-libpsl --without-nghttp2 --without-ngtcp2 --without-zstd --without-libidn2 --without-librtmp --without-zlib --without-ssl
+          make
+      - name: Build + Test
+        run: make loadable
+      - uses: actions/upload-artifact@v3
+        with:
+          name: sqlite-url-linux_x86
+          path: dist/url0.so
+  build-linux_x86-python:
+    runs-on: ubuntu-20.04
+    needs: [build-linux_x86-extension]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Download workflow artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: sqlite-url-linux_x86
+          path: dist/
+      - uses: actions/setup-python@v3
+      - run: pip install wheel
+      - run: make python
+      - run: make datasette
+      - uses: actions/upload-artifact@v3
+        with:
+          name: sqlite-url-linux_x86-wheels
+          path: dist/wheels/*.whl
+  test-linux_x86:
+    runs-on: ubuntu-20.04
+    needs: [build-linux_x86-extension, build-linux_x86-python]
+    env:
+      DENO_DIR: deno_cache
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
+        with:
+          name: sqlite-url-linux_x86
+          path: dist/
+      - uses: actions/download-artifact@v3
+        with:
+          name: sqlite-url-linux_x86-wheels
+          path: dist/
+      - run: cp dist/url0.so npm/sqlite-url-linux-x64/lib
+      - run: pip3 install --find-links dist/ sqlite_url
+      - run: make test-loadable
+      - run: make test-python
+      # for test-npm
+      - uses: actions/setup-node@v3
+        with:
+          cache: "npm"
+          cache-dependency-path: npm/sqlite-url/package.json
+      - run: npm install
+        working-directory: npm/sqlite-url
+      - run: make test-npm
+      # for test-deno
+      - uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.30
+      - name: Cache Deno dependencies
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.DENO_DIR }}
+          key: ${{ runner.os }}-${{ hashFiles('deno/deno.lock') }}
+      - run: make test-deno
+        env:
+          DENO_SQLITE_URL_PATH: ${{ github.workspace }}/dist/url0
+  build-macos-extension:
     name: Testing on MacOS
     runs-on: macos-latest
     steps:
@@ -16,47 +93,62 @@ jobs:
           autoreconf -fi
           ./configure  --without-brotli --without-libpsl --without-nghttp2 --without-ngtcp2 --without-zstd --without-libidn2 --without-librtmp --without-zlib --without-ssl
           make
-      - name: Build + Test
-        run: |
-          mkdir -p dist/
-          make loadable
-          make test-loadable
-  test-ubuntu:
-    name: Testing on Ubuntu
-    runs-on: ubuntu-latest
+      - run: make loadable
+  build-macos-python:
+    runs-on: macos-latest
+    needs: [build-macos-extension]
     steps:
       - uses: actions/checkout@v3
+      - name: Download workflow artifacts
+        uses: actions/download-artifact@v3
         with:
-          submodules: true
-      - name: Install deps
-        run: sudo apt-get update && sudo apt-get install autoconf -y
-      - name: Build curl
-        run: |
-          cd curl
-          autoreconf -fi
-          ./configure  --without-brotli --without-libpsl --without-nghttp2 --without-ngtcp2 --without-zstd --without-libidn2 --without-librtmp --without-zlib --without-ssl
-          make
-      - name: Build + Test
-        run: |
-          mkdir -p dist/
-          make loadable
-          make test-loadable
-
-#  test-windows:
-#    name: Testing on Windows
-#    runs-on: windows-2022
-#    steps:
-#      - uses: actions/checkout@v3
-#        with:
-#          submodules: true
-#      - name: Install deps
-#        run: choco install autoconf automake libtool --source cygwin -y --force
-#      # TODO this is not fun
-#      - name: Build curl (windows)
-#        run: |
-#          C:\tools\cygwin\bin\bash.exe -l -c ^"cd curl ^&^& autoreconf -fi ^&^& ./configure --without-ssl ^&^& make loadable ^"
-#      - name: Build + Test
-#        run: |
-#          mkdir -p dist/
-#          make loadable
-#          make test-loadable
+          name: sqlite-url-macos
+          path: dist/
+      - uses: actions/setup-python@v3
+      - run: pip install wheel
+      - run: make python
+      - run: make datasette
+      - uses: actions/upload-artifact@v3
+        with:
+          name: sqlite-url-macos-wheels
+          path: dist/wheels/*.whl
+  test-macos:
+    runs-on: macos-latest
+    needs: [build-macos-extension, build-macos-python]
+    env:
+      DENO_DIR: deno_cache
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
+        with:
+          name: sqlite-url-macos
+          path: dist/
+      - run: cp dist/url0.dylib npm/sqlite-url-darwin-x64/lib
+      - uses: actions/download-artifact@v3
+        with:
+          name: sqlite-url-macos-wheels
+          path: dist/
+      - run: brew install python
+      - run: /usr/local/opt/python@3/libexec/bin/pip install --find-links dist/ sqlite_url
+      - run: make test-loadable python=/usr/local/opt/python@3/libexec/bin/python
+      - run: make test-python python=/usr/local/opt/python@3/libexec/bin/python
+      # for test-npm
+      - uses: actions/setup-node@v3
+        with:
+          cache: "npm"
+          cache-dependency-path: npm/sqlite-url/package.json
+      - run: npm install
+        working-directory: npm/sqlite-url
+      - run: make test-npm
+      # for test-deno
+      - uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.30
+      - name: Cache Deno dependencies
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.DENO_DIR }}
+          key: ${{ runner.os }}-${{ hashFiles('deno/deno.lock') }}
+      - run: make test-deno
+        env:
+          DENO_SQLITE_URL_PATH: ${{ github.workspace }}/dist/url0.dylib
