@@ -45,7 +45,6 @@ jobs:
           name: sqlite-url-linux_x86-wheels
           path: dist/wheels/*.whl
   build-macos-extension:
-    name: Testing on MacOS
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
@@ -60,6 +59,10 @@ jobs:
           ./configure  --without-brotli --without-libpsl --without-nghttp2 --without-ngtcp2 --without-zstd --without-libidn2 --without-librtmp --without-zlib --without-ssl
           make
       - run: make loadable
+      - uses: actions/upload-artifact@v3
+        with:
+          name: sqlite-url-macos
+          path: dist/url0.so
   build-macos-python:
     runs-on: macos-latest
     needs: [build-macos-extension]
