@@ -158,13 +158,13 @@ jobs:
       - run: |
           rm bindings/ruby/lib/*.{dylib,so,dll} || true
           cp sqlite-url-macos/*.dylib bindings/ruby/lib
-          gem -C bindings/ruby build -o x86_64-darwin.gem sqlite_vss.gemspec
+          gem -C bindings/ruby build -o x86_64-darwin.gem sqlite_url.gemspec
         env:
           PLATFORM: x86_64-darwin
       - run: |
           rm bindings/ruby/lib/*.{dylib,so,dll} || true
           cp sqlite-url-linux_x86/*.so bindings/ruby/lib
-          gem -C bindings/ruby build -o x86_64-linux.gem sqlite_vss.gemspec
+          gem -C bindings/ruby build -o x86_64-linux.gem sqlite_url.gemspec
         env:
           PLATFORM: x86_64-linux
       - run: |
