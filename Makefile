@@ -59,11 +59,17 @@ npm: VERSION npm/platform-package.README.md.tmpl npm/platform-package.package.js
 deno: VERSION deno/deno.json.tmpl
 	scripts/deno_generate_package.sh
 
+bindings/ruby/lib/version.rb: bindings/ruby/lib/version.rb.tmpl VERSION
+	VERSION=$(VERSION) envsubst < $< > $@
+
+ruby: bindings/ruby/lib/version.rb
+
 version:
 	make python-versions
 	make python
 	make npm
 	make deno
+	make ruby
 
 
 TARGET_SQLITE3_EXTRA_C=$(prefix)/sqlite3-extra.c
@@ -109,7 +115,7 @@ $(TARGET_SQLITE3): $(prefix) $(TARGET_SQLITE3_EXTRA_C) sqlite/shell.c sqlite-url
 	$(TARGET_SQLITE3_EXTRA_C) sqlite/shell.c sqlite-url.c curl/lib/.libs/libcurl.a $(LOAD_FLAGS) \
 	-o $@
 
-test: 
+test:
 	make test-format
 	make test-loadable
 	make test-python
@@ -143,7 +149,7 @@ test-sqlite3-watch: $(TARAGET_SQLITE3)
 	watchexec -w $(TARAGET_SQLITE3) -w tests/test-sqlite3.py --clear -- make test-sqlite3
 
 .PHONY: all clean format \
-	python python-versions datasette npm deno version \
+	python python-versions datasette npm deno ruby version \
 	test test-watch test-loadable-watch test-cli-watch test-sqlite3-watch \
 	test-format test-loadable test-cli \
 	loadable
