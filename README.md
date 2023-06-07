@@ -25,9 +25,9 @@ Generate a URL programmatically.
 ```sql
 select url(null,
   'scheme', 'https',
-  'host', 'alexgarcia.xyz',
+  'host', 'alexgarcia.url',
   'fragment', 'yeet'
-); -- 'https://alexgarcia.xyz/#yeet'
+); -- 'https://alexgarcia.url/#yeet'
 ```
 
 Iterate through all parameters in a URL's query string.
@@ -96,6 +96,21 @@ select url(
 See [`docs.md`](./docs.md) for a full API reference.
 
 ## Installing
+
+| Language       | Install                                                    |                                                                                                                                                                                           |
+| -------------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Python         | `pip install sqlite-url`                                   | [![PyPI](https://img.shields.io/pypi/v/sqlite-url.svg?color=blue&logo=python&logoColor=white)](https://pypi.org/project/sqlite-url/)                                                      |
+| Datasette      | `datasette install datasette-sqlite-url`                   | [![Datasette](https://img.shields.io/pypi/v/datasette-sqlite-url.svg?color=B6B6D9&label=Datasette+plugin&logoColor=white&logo=python)](https://datasette.io/plugins/datasette-sqlite-url) |
+| Node.js        | `npm install sqlite-url`                                   | [![npm](https://img.shields.io/npm/v/sqlite-url.svg?color=green&logo=nodedotjs&logoColor=white)](https://www.npmjs.com/package/sqlite-url)                                                |
+| Deno           | [`deno.land/x/sqlite_url`](https://deno.land/x/sqlite_url) | [![deno.land/x release](https://img.shields.io/github/v/release/asg017/sqlite-url?color=fef8d2&include_prereleases&label=deno.land%2Fx&logo=deno)](https://deno.land/x/sqlite_url)        |
+| Ruby           | `gem install sqlite-url`                                   | ![Gem](https://img.shields.io/gem/v/sqlite-url?color=red&logo=rubygems&logoColor=white)                                                                                                   |
+| Github Release |                                                            | ![GitHub tag (latest SemVer pre-release)](https://img.shields.io/github/v/tag/asg017/sqlite-url?color=lightgrey&include_prereleases&label=Github+release&logo=github)                     |
+
+<!--
+| Elixir         | [`hex.pm/packages/sqlite_url`](https://hex.pm/packages/sqlite_url) | [![Hex.pm](https://img.shields.io/hexpm/v/sqlite_url?color=purple&logo=elixir)](https://hex.pm/packages/sqlite_url)                                                                       |
+| Go             | `go get -u github.com/asg017/sqlite-url/bindings/go`               | [![Go Reference](https://pkg.go.dev/badge/github.com/asg017/sqlite-url/bindings/go.svg)](https://pkg.go.dev/github.com/asg017/sqlite-url/bindings/go)                                     |
+| Rust           | `cargo add sqlite-url`                                             | [![Crates.io](https://img.shields.io/crates/v/sqlite-url?logo=rust)](https://crates.io/crates/sqlite-url)                                                                                 |
+-->
 
 The [Releases page](https://github.com/asg017/sqlite-url/releases) contains pre-built binaries for Linux amd6 and MacOS amd64 (no arm).
 
