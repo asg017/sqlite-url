@@ -3,13 +3,13 @@
 # `x/sqlite_url` Deno Module
 
 [![Tags](https://img.shields.io/github/release/asg017/sqlite-url)](https://github.com/asg017/sqlite-url/releases)
-[![Doc](https://doc.deno.land/badge.svg)](https://doc.deno.land/https/deno.land/x/sqlite-url@0.1.0-alpha.4/mod.ts)
+[![Doc](https://doc.deno.land/badge.svg)](https://doc.deno.land/https/deno.land/x/sqlite-url@0.1.0-alpha.5/mod.ts)
 
 The [`sqlite-url`](https://github.com/asg017/sqlite-url) SQLite extension is available to Deno developers with the [`x/sqlite_url`](https://deno.land/x/sqlite-url) Deno module. It works with [`x/sqlite3`](https://deno.land/x/sqlite3), the fastest and native Deno SQLite3 module.
 
 ```js
 import { Database } from "https://deno.land/x/sqlite3@0.8.0/mod.ts";
-import * as sqlite_url from "https://deno.land/x/sqlite_url@v0.1.0-alpha.4/mod.ts";
+import * as sqlite_url from "https://deno.land/x/sqlite_url@v0.1.0-alpha.5/mod.ts";
 
 const db = new Database(":memory:");
 
