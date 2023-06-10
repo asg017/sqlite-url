@@ -96,8 +96,8 @@ jobs:
           name: sqlite-url
           github-token: ${{ secrets.GITHUB_TOKEN }}
           platforms: |
-            linux-x86_64:     sqlite-url-linux_x86
-            macos-x86_64:     sqlite-url-macos
+            linux-x86_64:     sqlite-url-linux_x86/*
+            macos-x86_64:     sqlite-url-macos/*
   upload-deno:
     name: Upload Deno release assets
     needs: [build-macos-extension, build-linux_x86-extension]
