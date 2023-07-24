@@ -1,0 +1,21 @@
+[project]
+name = "sqlite-utils-sqlite-url"
+version = "0.1.0-alpha.7"
+description = "TODO"
+readme = "README.md"
+authors = [{name = "Alex Garcia"}]
+license = {text = "Apache-2.0"}
+classifiers = []
+
+dependencies = [
+    "sqlite-utils",
+    "sqlite-url"
+]
+
+[project.urls]
+Homepage = "https://github.com/asg017/sqlite-url"
+Changelog = "https://github.com/asg017/sqlite-url/releases"
+Issues = "https://github.com/asg017/sqlite-url/issues"
+
+[project.entry-points.sqlite_utils]
+sqlite_url = "sqlite_utils_sqlite_url"
