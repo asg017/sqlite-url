@@ -1,0 +1,11 @@
+[package]
+name = "sqlite-url"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+sqlite-loadable = "0.0.6-alpha.6"
+url = "2.4"
+
+[lib]
+crate-type = ["cdylib", "staticlib", "lib"]
