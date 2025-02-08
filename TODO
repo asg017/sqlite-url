@@ -1,0 +1,4 @@
+- [ ] C version compatability
+- [ ] bindings + cargo
+- [ ] alpha release
+- [ ] `url()` table function - `select scheme, host, path, querystring from url('...')`
